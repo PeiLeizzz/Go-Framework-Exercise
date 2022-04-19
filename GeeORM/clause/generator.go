@@ -92,8 +92,9 @@ func _limit(values ...interface{}) (string, []interface{}) {
  */
 func _where(values ...interface{}) (string, []interface{}) {
 	// desc 中的条件语句类似于 "Name = ?", "Tom"
-	desc, vars := values[0], values[1:]
-	return fmt.Sprintf("WHERE %s", desc), vars
+	// Change: vars := values[1:]
+	desc, vars := values[0], values[1]
+	return fmt.Sprintf("WHERE %s", desc), vars.([]interface{})
 }
 
 /**

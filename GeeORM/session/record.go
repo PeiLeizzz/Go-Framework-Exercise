@@ -1,21 +1,22 @@
 package session
 
 import (
+	"errors"
 	"geeorm/clause"
 	"reflect"
 )
 
 /**
- * 	INSERT INTO table_name(col1, col2, col3, ...) VALUES
+ * INSERT INTO table_name(col1, col2, col3, ...) VALUES
  * 		(A1, A2, A3, ...),
  * 		(B1, B2, B3, ...),
  * 		...
- *  => 难点：将对象转换为字段与值
- * 	s := geeorm.NewEngine("sqlite3", "gee.db").NewSession()
- *  u1 := &User{Name: "Tom", Age: 18}
- *  u2 := &User{Name: "Sam", Age: 25}
- *  ...
- *  s.Insert(u1, u2, ...)
+ * => 难点：将对象转换为字段与值
+ * s := geeorm.NewEngine("sqlite3", "gee.db").NewSession()
+ * u1 := &User{Name: "Tom", Age: 18}
+ * u2 := &User{Name: "Sam", Age: 25}
+ * ...
+ * s.Insert(u1, u2, ...)
  */
 func (s *Session) Insert(values ...interface{}) (int64, error) {
 	recordValues := make([]interface{}, 0)
@@ -40,6 +41,7 @@ func (s *Session) Insert(values ...interface{}) (int64, error) {
 
 /**
  * 难点：从 select 查询结果构造出对象
+ * 传入的 values 必须是 slice
  * s := geeorm.NewEngin("sqlite3", "gee.db").NewSession()
  * var users []User
  * s.Find(&users)
@@ -102,4 +104,75 @@ func (s *Session) Update(kv ...interface{}) (int64, error) {
 		return 0, nil
 	}
 	return result.RowsAffected()
+}
+
+/**
+ * 要求 s 中已绑定 table
+ */
+func (s *Session) Delete() (int64, error) {
+	s.clause.Set(clause.DELETE, s.RefTable().Name)
+	sql, vars := s.clause.Build(clause.DELETE, clause.WHERE)
+	result, err := s.Raw(sql, vars...).Exec()
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+/**
+ * 要求 s 中已绑定 table
+ */
+func (s *Session) Count() (int64, error) {
+	s.clause.Set(clause.COUNT, s.RefTable().Name)
+	sql, vars := s.clause.Build(clause.COUNT, clause.WHERE)
+	row := s.Raw(sql, vars...).QueryRow()
+	var tmp int64
+	if err := row.Scan(&tmp); err != nil {
+		return 0, err
+	}
+	return tmp, nil
+}
+
+/**
+ * 只返回一条查询记录：SELECT + LIMIT(1)
+ * e.g.
+ *     u := &User{}
+ * 	   _ = s.OrderBy("Age DESC").First(u)
+ */
+func (s *Session) First(value interface{}) error {
+	dest := reflect.Indirect(reflect.ValueOf(value))
+	destSlice := reflect.New(reflect.SliceOf(dest.Type())).Elem()
+	if err := s.Limit(1).Find(destSlice.Addr().Interface()); err != nil {
+		return err
+	}
+	if destSlice.Len() == 0 {
+		return errors.New("NOT FOUND")
+	}
+	dest.Set(destSlice.Index(0))
+	return nil
+}
+
+// ------------------------ 链式调用部分 ------------------------
+// e.g.
+//     s := geeorm.NewEngin("sqlite3", "gee.db").NewSession()
+//	   var users []User
+// 	   s.Where("Age > 18").Limit(3).Find(&users)
+// WHERE、LIMIT、ORDER BY 适合于这种模式
+
+func (s *Session) Limit(num int) *Session {
+	s.clause.Set(clause.LIMIT, num)
+	return s
+}
+
+func (s *Session) Where(desc string, args ...interface{}) *Session {
+	// var vars []interface{}
+	// 将 desc, args 合并传入
+	// Change: Set(clause.WHERE, append(append(vars, desc), args...)...))
+	s.clause.Set(clause.WHERE, desc, args)
+	return s
+}
+
+func (s *Session) OrderBy(desc string) *Session {
+	s.clause.Set(clause.ORDERBY, desc)
+	return s
 }
