@@ -1,0 +1,105 @@
+package session
+
+import (
+	"geeorm/clause"
+	"reflect"
+)
+
+/**
+ * 	INSERT INTO table_name(col1, col2, col3, ...) VALUES
+ * 		(A1, A2, A3, ...),
+ * 		(B1, B2, B3, ...),
+ * 		...
+ *  => 难点：将对象转换为字段与值
+ * 	s := geeorm.NewEngine("sqlite3", "gee.db").NewSession()
+ *  u1 := &User{Name: "Tom", Age: 18}
+ *  u2 := &User{Name: "Sam", Age: 25}
+ *  ...
+ *  s.Insert(u1, u2, ...)
+ */
+func (s *Session) Insert(values ...interface{}) (int64, error) {
+	recordValues := make([]interface{}, 0)
+	for _, value := range values {
+		// 下面两句可以简化为只设置一次
+		table := s.Model(value).RefTable()
+		s.clause.Set(clause.INSERT, table.Name, table.FieldNames)
+		// FieldNames 和 Fields 顺序一一对应
+		// 注意这里不能 table.RecordValues(value)...
+		// 因为 recordValues 应该是 [][]interface
+		// 每个元素是一组 value
+		recordValues = append(recordValues, table.RecordValues(value))
+	}
+	s.clause.Set(clause.VALUES, recordValues...)
+	sql, vars := s.clause.Build(clause.INSERT, clause.VALUES)
+	result, err := s.Raw(sql, vars...).Exec()
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+/**
+ * 难点：从 select 查询结果构造出对象
+ * s := geeorm.NewEngin("sqlite3", "gee.db").NewSession()
+ * var users []User
+ * s.Find(&users)
+ */
+func (s *Session) Find(values interface{}) error {
+	destSlice := reflect.Indirect(reflect.ValueOf(values))
+	destType := destSlice.Type().Elem() // slice 中元素的类型
+	table := s.Model(reflect.New(destType).Elem().Interface()).RefTable()
+
+	s.clause.Set(clause.SELECT, table.Name, table.FieldNames)
+	// 测试：如果查询结果中的字段顺序和结构体中成员的定义顺序不同，则会错误
+	// s.clause.Set(clause.SELECT, table.Name, []string{table.FieldNames[1], table.FieldNames[0]})
+	sql, vars := s.clause.Build(clause.SELECT, clause.WHERE, clause.ORDERBY, clause.LIMIT)
+	rows, err := s.Raw(sql, vars...).QueryRows()
+	if err != nil {
+		return err
+	}
+
+	for rows.Next() {
+		// 每一行记录的实例，可以取地址
+		dest := reflect.New(destType).Elem()
+		var values []interface{}
+		for _, name := range table.FieldNames {
+			// 加入指针元素（对应 values 中的引用）
+			values = append(values, dest.FieldByName(name).Addr().Interface())
+		}
+		// 将该行记录每一列的值依次赋值给 values 中的每一个字段
+		// values 中存放的是 dest 成员的地址
+		// 保存给 values 就代表保存给了 dest 的成员
+		// TODO: 是否需要保证表中字段的顺序（select 返回的顺序）和结构体中定义的顺序一致？
+		// 如果通过 schema 建的表应该是一致的
+		// 测试结果：需要保证，否则会出错，顺序必须一一对应
+		if err := rows.Scan(values...); err != nil {
+			return err
+		}
+		destSlice.Set(reflect.Append(destSlice, dest))
+	}
+	return rows.Close()
+}
+
+/**
+ * 要求 s 中已绑定 table
+ * 使用：s.Update(kv)
+ * support kv : map[string]interface{}
+ *  	or kv : []interface{} -> {"Name", "Tom", "Age", 18, ...}
+ */
+func (s *Session) Update(kv ...interface{}) (int64, error) {
+	m, ok := kv[0].(map[string]interface{})
+	if !ok {
+		m = make(map[string]interface{})
+		for i := 0; i < len(kv); i += 2 {
+			m[kv[i].(string)] = kv[i+1]
+		}
+	}
+
+	s.clause.Set(clause.UPDATE, s.RefTable().Name, m)
+	sql, vars := s.clause.Build(clause.UPDATE, clause.WHERE)
+	result, err := s.Raw(sql, vars...).Exec()
+	if err != nil {
+		return 0, nil
+	}
+	return result.RowsAffected()
+}
