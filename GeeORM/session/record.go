@@ -33,7 +33,19 @@ import (
 //	   return
 // }
 //
-// CRUD 函数中调用：s.CallMethod(BeforeQuery, value)
+// CRUD 函数中调用形式：s.CallMethod(BeforeQuery, value)
+//
+// 事务 BEGIN - COMMIT/ROLLBACK 的过程中也支持 Hook 函数
+// 原因是事务会先写入日志，COMMIT 后才写入磁盘
+// 在写入日志后、提交磁盘前也可以 SELECT 到本次事务新加的数据
+// 比如在事务中，第一步 INSERT INTO User(Name, Age) VALUES("Tom", 28)
+// User 有个 AfterQuery 函数，作用是使 Age++
+// 第二步 调用 First 函数返回一条数据
+// 最后再进行 COMMIT/ROLLBACK
+// 那么返回的 u = &User{"Tom", 29}
+// 不会因为事务没提交而 Query 不到数据
+//
+// 事务 Tx.Exec() 不会返回 rows
 
 /**
  * INSERT INTO table_name(col1, col2, col3, ...) VALUES

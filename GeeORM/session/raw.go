@@ -12,12 +12,22 @@ import (
 
 type Session struct {
 	db       *sql.DB
+	tx       *sql.Tx // 当 tx 不为空时，用事务的形式执行
 	dialect  dialect.Dialect
 	refTable *schema.Schema
 	clause   clause.Clause
 	sql      strings.Builder // sql 语句
 	sqlVars  []interface{}   // 占位符的对应值
 }
+
+type CommonDB interface {
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...interface{}) *sql.Row
+	Exec(query string, args ...interface{}) (sql.Result, error)
+}
+
+var _ CommonDB = (*sql.DB)(nil)
+var _ CommonDB = (*sql.Tx)(nil)
 
 func New(db *sql.DB, dialect dialect.Dialect) *Session {
 	return &Session{
@@ -32,7 +42,15 @@ func (s *Session) Clear() {
 	s.clause = clause.Clause{}
 }
 
-func (s *Session) DB() *sql.DB {
+/**
+ * 通过接口来实现多态
+ * 如果 tx 不为空，则以事务的形式执行
+ * 如果 tx 为空，则以普通形式执行
+ */
+func (s *Session) DB() CommonDB {
+	if s.tx != nil {
+		return s.tx
+	}
 	return s.db
 }
 
