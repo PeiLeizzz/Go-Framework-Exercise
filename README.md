@@ -9,7 +9,7 @@
 - 上下文 Context：可以在中间件之间传递信息
 - 路由 Router：采用 Trie 树实现
 - 分组路由 RouterGroup：提供对特定路径的统一控制与管理（如 logger、鉴权等）
-- 中间件 MiddleWareL：洋葱模型
+- 中间件 MiddleWare：洋葱模型
 
 ## GeeORM 的总结
 
