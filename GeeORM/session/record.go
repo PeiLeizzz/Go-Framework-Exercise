@@ -6,6 +6,31 @@ import (
 	"reflect"
 )
 
+// ------------------------ 增删改查部分 ------------------------
+// 支持 Hook 机制：Before、After
+// 这里的实现是通过方法名来匹配（详见 hooks.go）
+// 也可以通过接口来实现
+// e.g.
+// type IBeforeQuery interface {
+//     BeforeQuery(s *Session) error
+// }
+//
+// type IAfterQuery interface {
+//     AfterQuery(s *Session) error
+// }
+//
+// ...
+//
+// hooks.go: CallMethod
+// func (s *Session) CallMethod(method interface{}, value interface{}) {
+//     ...
+//     if m, ok := method.(IBeforeQuery); ok {
+//	       value.m(s)
+//     }
+//	   ...
+//	   return
+// }
+
 /**
  * INSERT INTO table_name(col1, col2, col3, ...) VALUES
  * 		(A1, A2, A3, ...),
@@ -17,10 +42,13 @@ import (
  * u2 := &User{Name: "Sam", Age: 25}
  * ...
  * s.Insert(u1, u2, ...)
+ * 如果 hook 函数中的接收者是指针类型，这里就要传引用
  */
 func (s *Session) Insert(values ...interface{}) (int64, error) {
 	recordValues := make([]interface{}, 0)
 	for _, value := range values {
+		// 行级 hook
+		s.CallMethod(BeforeInsert, value)
 		// 下面两句可以简化为只设置一次
 		table := s.Model(value).RefTable()
 		s.clause.Set(clause.INSERT, table.Name, table.FieldNames)
@@ -36,6 +64,7 @@ func (s *Session) Insert(values ...interface{}) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	s.CallMethod(AfterInsert, nil)
 	return result.RowsAffected()
 }
 
@@ -50,6 +79,7 @@ func (s *Session) Find(values interface{}) error {
 	destSlice := reflect.Indirect(reflect.ValueOf(values))
 	destType := destSlice.Type().Elem() // slice 中元素的类型
 	table := s.Model(reflect.New(destType).Elem().Interface()).RefTable()
+	s.CallMethod(BeforeQuery, nil)
 
 	s.clause.Set(clause.SELECT, table.Name, table.FieldNames)
 	// 测试：如果查询结果中的字段顺序和结构体中成员的定义顺序不同，则会错误
@@ -77,6 +107,8 @@ func (s *Session) Find(values interface{}) error {
 		if err := rows.Scan(values...); err != nil {
 			return err
 		}
+		// 行级 hook
+		s.CallMethod(AfterQuery, dest.Addr().Interface())
 		destSlice.Set(reflect.Append(destSlice, dest))
 	}
 	return rows.Close()
@@ -97,12 +129,14 @@ func (s *Session) Update(kv ...interface{}) (int64, error) {
 		}
 	}
 
+	s.CallMethod(BeforeUpdate, nil)
 	s.clause.Set(clause.UPDATE, s.RefTable().Name, m)
 	sql, vars := s.clause.Build(clause.UPDATE, clause.WHERE)
 	result, err := s.Raw(sql, vars...).Exec()
 	if err != nil {
 		return 0, nil
 	}
+	s.CallMethod(AfterUpdate, nil)
 	return result.RowsAffected()
 }
 
@@ -110,14 +144,19 @@ func (s *Session) Update(kv ...interface{}) (int64, error) {
  * 要求 s 中已绑定 table
  */
 func (s *Session) Delete() (int64, error) {
+	s.CallMethod(BeforeDelete, nil)
 	s.clause.Set(clause.DELETE, s.RefTable().Name)
 	sql, vars := s.clause.Build(clause.DELETE, clause.WHERE)
 	result, err := s.Raw(sql, vars...).Exec()
 	if err != nil {
 		return 0, err
 	}
+	s.CallMethod(AfterDelete, nil)
 	return result.RowsAffected()
 }
+
+// ------------------------ 快捷调用部分 ------------------------
+// 统计满足条件的数据数量、只返回一条查询记录
 
 /**
  * 要求 s 中已绑定 table
