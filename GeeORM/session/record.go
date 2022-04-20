@@ -22,14 +22,18 @@ import (
 // ...
 //
 // hooks.go: CallMethod
-// func (s *Session) CallMethod(method interface{}, value interface{}) {
+// func (s *Session) CallMethod(method string, value interface{}) {
 //     ...
-//     if m, ok := method.(IBeforeQuery); ok {
-//	       value.m(s)
+//     if method == BeforeQuery {
+//         if m, ok := value.(IBeforeQuery); ok {
+//	           m.BeforeQuery(s)
+//         }
 //     }
 //	   ...
 //	   return
 // }
+//
+// CRUD 函数中调用：s.CallMethod(BeforeQuery, value)
 
 /**
  * INSERT INTO table_name(col1, col2, col3, ...) VALUES
