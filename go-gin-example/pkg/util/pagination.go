@@ -11,13 +11,13 @@ import (
 
 func GetPage(c *gin.Context) int {
 	result := 0
-	page, err := com.StrTo(c.Query("page")).Int()
+	page, err := com.StrTo(c.DefaultQuery("page", "1")).Int()
 
 	if err != nil {
-		log.Fatalf("Failed to convert param 'page'(%s) to int: %v", c.Query("page"), err)
+		log.Printf("Failed to convert param 'page'(%s) to int: %v", c.Query("page"), err)
 	}
 
-	if page > 0 {
+	if page > 1 {
 		result = (page - 1) * setting.PageSize
 	}
 	return result

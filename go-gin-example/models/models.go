@@ -12,10 +12,11 @@ import (
 
 var db *gorm.DB
 
+// gorm 默认列名映射为小写下划线命名法（CreatedOn -> created_on）
 type Model struct {
-	ID          int `gorm:"primary_key" json:"id"`
-	CreatedOn   int `json:"created_on"`
-	ModeifiedOn int `json:"modified_on"`
+	ID         int `gorm:"primary_key" json:"id"`
+	CreatedOn  int `json:"created_on"`
+	ModifiedOn int `json:"modified_on"`
 }
 
 func init() {
@@ -57,7 +58,7 @@ func init() {
 		return tablePrefix + defaultTableName
 	}
 
-	db.SingularTable(true)
+	db.SingularTable(true) // 配置默认数据库表名 = 结构体名的单数（User -> user）
 	db.LogMode(true)
 	db.DB().SetMaxIdleConns(10)  // 允许的最大空闲链接数
 	db.DB().SetMaxOpenConns(100) // 允许的最大链接数
