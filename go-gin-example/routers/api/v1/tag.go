@@ -63,7 +63,9 @@ func AddTag(c *gin.Context) {
 			code = e.ERROR_EXIST_TAG
 		}
 	} else {
-		log.Printf("validation error: %v", valid.Errors)
+		for _, err := range valid.Errors {
+			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -109,7 +111,9 @@ func EditTag(c *gin.Context) {
 			code = e.ERROR_NOT_EXIST_TAG
 		}
 	} else {
-		log.Printf("validation error: %v", valid.Errors)
+		for _, err := range valid.Errors {
+			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -135,7 +139,9 @@ func DeleteTag(c *gin.Context) {
 			code = e.ERROR_NOT_EXIST_TAG
 		}
 	} else {
-		log.Printf("validation error: %v", valid.Errors)
+		for _, err := range valid.Errors {
+			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
