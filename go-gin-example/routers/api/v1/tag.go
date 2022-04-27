@@ -1,11 +1,11 @@
 package v1
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/PeiLeizzz/go-gin-example/models"
 	"github.com/PeiLeizzz/go-gin-example/pkg/e"
+	"github.com/PeiLeizzz/go-gin-example/pkg/logging"
 	"github.com/PeiLeizzz/go-gin-example/pkg/setting"
 	"github.com/PeiLeizzz/go-gin-example/pkg/util"
 	"github.com/astaxie/beego/validation"
@@ -19,20 +19,31 @@ func GetTags(c *gin.Context) {
 
 	maps := make(map[string]interface{})
 	data := make(map[string]interface{})
+	valid := validation.Validation{}
 
 	if name != "" {
 		maps["name"] = name
+
+		valid.MaxSize(name, 100, "name").Message("标签名字最多 100 个字符")
 	}
 
 	if arg := c.Query("state"); arg != "" {
 		state := com.StrTo(arg).MustInt()
 		maps["state"] = state
+
+		valid.Range(state, 0, 1, "state").Message("状态只允许 0 或 1")
 	}
 
-	code := e.SUCCESS
-
-	data["lists"] = models.GetTags(util.GetPage(c), setting.PageSize, maps)
-	data["total"] = models.GetTagTotal(maps)
+	code := e.INVALID_PARMAS
+	if !valid.HasErrors() {
+		code = e.SUCCESS
+		data["lists"] = models.GetTags(util.GetPage(c), setting.PageSize, maps)
+		data["total"] = models.GetTagTotal(maps)
+	} else {
+		for _, err := range valid.Errors {
+			logging.Info(err.Key, err.Message)
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": code,
@@ -64,7 +75,7 @@ func AddTag(c *gin.Context) {
 		}
 	} else {
 		for _, err := range valid.Errors {
-			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
+			logging.Info(err.Key, err.Message)
 		}
 	}
 
@@ -112,7 +123,7 @@ func EditTag(c *gin.Context) {
 		}
 	} else {
 		for _, err := range valid.Errors {
-			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
+			logging.Info(err.Key, err.Message)
 		}
 	}
 
@@ -140,7 +151,7 @@ func DeleteTag(c *gin.Context) {
 		}
 	} else {
 		for _, err := range valid.Errors {
-			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
+			logging.Info(err.Key, err.Message)
 		}
 	}
 
