@@ -25,6 +25,32 @@
   > `endless` 热更新：创建子进程后将原进程退出，有点不符合守护进程的要求
 - **优雅的关闭**：`http.Server` 的 `Shutdown` 方法
   
+### 2022-4-28 
+#### Docker
+-  Docker 是一个开源的轻量级容器技术，让开发者可以打包他们的应用以及应用运行的上下文环境到一个可移植的镜像中，然后发布到任何支持 Docker 的系统上运行。通过容器技术，在几乎没有性能开销的情况下，Docker 为应用提供了一个隔离运行环境。
+  - 简化配置
+  - 代码流水线管理
+  - 提高开发效率
+  - 隔离应用
+  - 快速、持续部署
+- MySQL 创建用户 + 密码
+  1. `CREATE USER 'root'@'%' IDENTIFIED BY 'root';`
+  2. `GRANT ALL ON *.* TO 'root'@'%';`
+  3. `ALTER USER 'root'@'%' IDENTIFIED BY 'password';`
+- Docker 命令
+  1. 启动停止的容器 `docker start id`
+  2. 查看容器 `docker ps -a`
+  3. 创建 mysql 容器 `docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password -v absolutepath:/var/lib/mysql -d mysql/mysql-server`
+  4. 创建关联了 mysql 的应用容器 `docker run --link mysql:mysql -p 8000:8000 gin-blog-docker-scratch`
 
-
-   
+#### 交叉编译
+- Golang 跨平台编译：`CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-gin-example .`
+  - `CGO_ENABLED=0`：用于声明 cgo 工具不可用（存在交叉编译的情况时，cgo 不可用），关闭 cgo 后，在构建过程中会忽略 cgo 并**静态链接**所有的依赖库，而开启 cgo 后，方式将转为动态链接
+  - `GOOS=linux`：用于标识（声明）程序构建环境的目标操作系统
+  - `GOARCH`：用于标识（声明）程序构建环境的目标计算架构
+  - `GOHOSTOS`：用于标识（声明）程序运行环境的目标操作系统
+  - `GOHOSTARCH`：用于标识（声明）程序运行环境的目标计算架构
+  - `go build`
+    - `-a`：强制重新编译
+    - `-installsuffix`：在软件包安装的目录中增加后缀标识，以保持输出与默认版本分开
+    - `-o`：指定编译后的可执行文件名称
