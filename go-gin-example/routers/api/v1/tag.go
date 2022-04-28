@@ -14,6 +14,11 @@ import (
 )
 
 // 获取标签列表 GET("/tags?name=&state=&page=")
+// @Produce  json
+// @Param name query string false "Name"
+// @Param state query int false "State"
+// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/tags [get]
 func GetTags(c *gin.Context) {
 	name := c.Query("name")
 
@@ -52,7 +57,13 @@ func GetTags(c *gin.Context) {
 	})
 }
 
-// 新建标签 POST("/tags?name=&created_by=&state=") name, created_by 必须有
+// @Summary 新建文章标签
+// @Produce  json
+// @Param name query string true "Name"
+// @Param state query int false "State"
+// @Param created_by query int true "CreatedBy"
+// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/tags [post]
 func AddTag(c *gin.Context) {
 	name := c.Query("name")
 	state := com.StrTo(c.DefaultQuery("state", "0")).MustInt()
@@ -86,7 +97,14 @@ func AddTag(c *gin.Context) {
 	})
 }
 
-// 更新指定标签 PUT("/tags/:id?name=&modified_by=&state=") name, modified_by 必须有
+// @Summary 更新指定标签
+// @Produce  json
+// @Param id path int true "ID"
+// @Param name query string true "Name"
+// @Param state query int false "State"
+// @Param modified_by query string true "ModifiedBy"
+// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/tags/{id} [put]
 func EditTag(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 	name := c.Query("name")
@@ -103,6 +121,7 @@ func EditTag(c *gin.Context) {
 	valid.Required(id, "id").Message("ID 不能为空")
 	valid.Required(modifiedBy, "modified_by").Message("修改人不能为空")
 	valid.MaxSize(modifiedBy, 100, "modified_by").Message("修改人最长为 100 字符")
+	valid.Required(name, "name").Message("名称不能为空")
 	valid.MaxSize(name, 100, "name").Message("名称最长为 100 字符")
 
 	code := e.INVALID_PARMAS
@@ -134,7 +153,11 @@ func EditTag(c *gin.Context) {
 	})
 }
 
-// 删除指定标签 DELETE("/tags/:id")
+// @Summary 删除指定标签
+// @Produce  json
+// @Param id path int true "ID"
+// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/tags/{id} [delete]
 func DeleteTag(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 

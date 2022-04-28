@@ -13,7 +13,13 @@ import (
 	"github.com/unknwon/com"
 )
 
-// 获取文章列表：GET("/articles?state=&tag_id&page")
+// @Summary 获取文章列表
+// @Produce  json
+// @Param tag_id query int false "TagID"
+// @Param state query int false "State"
+// @Param created_by query int false "CreatedBy"
+// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/articles [get]
 func GetArticles(c *gin.Context) {
 	data := make(map[string]interface{})
 	maps := make(map[string]interface{})
@@ -53,7 +59,11 @@ func GetArticles(c *gin.Context) {
 	})
 }
 
-// 获取指定文章：GET("/articles/:id")
+// @Summary 获取指定文章
+// @Produce  json
+// @Param id path int true "ID"
+// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/articles/{id} [get]
 func GetArticle(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 
@@ -82,7 +92,16 @@ func GetArticle(c *gin.Context) {
 	})
 }
 
-// 新建文章：POST("/articles?tag_id=&title=&desc=&content=&created_by=&state=") tag_id, title, desc, content, created_by 必须有
+// @Summary 新建文章
+// @Produce  json
+// @Param tag_id query int true "TagID"
+// @Param title query string true "Title"
+// @Param desc query string true "Desc"
+// @Param content query string true "Content"
+// @Param created_by query string true "CreatedBy"
+// @Param state query int true "State"
+// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/articles [post]
 func AddArticle(c *gin.Context) {
 	tagId := com.StrTo(c.Query("tag_id")).MustInt()
 	title := c.Query("title")
@@ -132,7 +151,17 @@ func AddArticle(c *gin.Context) {
 	})
 }
 
-// 更新指定文章：PUT("/articles/:id?tag_id=&title=&desc=&content=&modified_by=&state=") tag_id, title, desc, content, modified_by 必须有
+// @Summary 更新指定文章
+// @Produce  json
+// @Param id path int true "ID"
+// @Param tag_id body string false "TagID"
+// @Param title body string false "Title"
+// @Param desc body string false "Desc"
+// @Param content body string false "Content"
+// @Param modified_by body string true "ModifiedBy"
+// @Param state body int false "State"
+// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/articles/{id} [put]
 func EditArticle(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 	tagId := com.StrTo(c.Query("tag_id")).MustInt()
@@ -199,7 +228,11 @@ func EditArticle(c *gin.Context) {
 	})
 }
 
-// 删除指定文章：DELETE("/articles/:id")
+// @Summary 删除指定文章
+// @Produce  json
+// @Param id path int true "ID"
+// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/articles/{id} [delete]
 func DeleteArticle(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 
