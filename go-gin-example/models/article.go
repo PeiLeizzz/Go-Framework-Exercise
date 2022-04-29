@@ -66,3 +66,8 @@ func DeleteArticle(id int) bool {
 	db.Where("id = ? and deleted_on = ?", id, 0).Delete(&Article{})
 	return true
 }
+
+func CleanAllArticles() bool {
+	db.Unscoped().Where("deleted_on != ?", 0).Delete(&Article{})
+	return true
+}

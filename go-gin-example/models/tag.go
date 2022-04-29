@@ -49,3 +49,10 @@ func EditTag(id int, data interface{}) bool {
 	db.Model(&Tag{}).Where("id = ? and deleted_on = ?", id, 0).Updates(data)
 	return true
 }
+
+func CleanAllTags() bool {
+	// 硬删除要使用 Unscoped() 这是 Gorm 的约定
+	// 因为在 model.go 的 Delete Callback 中，对 scope.Search.Unscoped 进行了检查
+	db.Unscoped().Where("deleted_on != ?", 0).Delete(&Tag{})
+	return true
+}
