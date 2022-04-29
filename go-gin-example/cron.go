@@ -12,7 +12,7 @@ import (
 	"github.com/robfig/cron"
 )
 
-func main() {
+func main2() {
 	log.Println("Starting...")
 
 	c := cron.New()
