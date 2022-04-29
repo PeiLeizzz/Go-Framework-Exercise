@@ -1,11 +1,5 @@
 package models
 
-import (
-	"time"
-
-	"github.com/jinzhu/gorm"
-)
-
 type Article struct {
 	Model
 
@@ -21,19 +15,9 @@ type Article struct {
 	State      int    `json:"state"`
 }
 
-func (article *Article) BeforeCreate(scope *gorm.Scope) error {
-	scope.SetColumn("CreatedOn", time.Now().Unix())
-	return nil
-}
-
-func (article *Article) BeforeUpdate(scope *gorm.Scope) error {
-	scope.SetColumn("ModifiedOn", time.Now().Unix())
-	return nil
-}
-
 func ExistArticleByID(id int) bool {
 	var article Article
-	db.Select("id").Where("id = ?", id).First(&article)
+	db.Select("id").Where("id = ? and deleted_on = ?", id, 0).First(&article)
 
 	return article.ID > 0
 }
@@ -52,7 +36,7 @@ func GetArticles(pageNum int, pageSize int, maps interface{}) (articles []Articl
 }
 
 func GetArticle(id int) (article Article) {
-	db.Where("id = ?", id).First(&article)
+	db.Where("id = ? and deleted_on = ?", id, 0).First(&article)
 	// `Related` usually used when you already loaded the User
 	// `Association` usually used when you need to do more advanced tasks
 	db.Model(&article).Related(&article.Tag)
@@ -62,7 +46,7 @@ func GetArticle(id int) (article Article) {
 }
 
 func EditArticle(id int, data interface{}) bool {
-	db.Model(&Article{}).Where("id = ?", id).Updates(data)
+	db.Model(&Article{}).Where("id = ? and deleted_on = ?", id, 0).Updates(data)
 	return true
 }
 
@@ -79,6 +63,6 @@ func AddArticle(data map[string]interface{}) bool {
 }
 
 func DeleteArticle(id int) bool {
-	db.Where("id = ?", id).Delete(&Article{})
+	db.Where("id = ? and deleted_on = ?", id, 0).Delete(&Article{})
 	return true
 }

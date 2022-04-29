@@ -1,11 +1,5 @@
 package models
 
-import (
-	"time"
-
-	"github.com/jinzhu/gorm"
-)
-
 type Tag struct {
 	Model
 
@@ -13,16 +7,6 @@ type Tag struct {
 	CreatedBy  string `json:"created_by"`
 	ModifiedBy string `json:"modified_by"`
 	State      int    `json:"state"`
-}
-
-func (tag *Tag) BeforeCreate(scope *gorm.Scope) error {
-	scope.SetColumn("CreatedOn", time.Now().Unix())
-	return nil
-}
-
-func (tag *Tag) BeforeUpdate(scope *gorm.Scope) error {
-	scope.SetColumn("ModifiedOn", time.Now().Unix())
-	return nil
 }
 
 func GetTags(pageNum int, pageSize int, maps interface{}) (tags []Tag) {
@@ -37,7 +21,7 @@ func GetTagTotal(maps interface{}) (count int) {
 
 func ExistTagByName(name string) bool {
 	var tag Tag
-	db.Select("id").Where("name = ?", name).First(&tag)
+	db.Select("id").Where("name = ? and deleted_on = ?", name, 0).First(&tag)
 	return tag.ID > 0
 }
 
@@ -52,16 +36,16 @@ func AddTag(name string, state int, createdBy string) bool {
 
 func ExistTagByID(id int) bool {
 	var tag Tag
-	db.Select("id").Where("id = ?", id).First(&tag)
+	db.Select("id").Where("id = ? and deleted_on = ?", id, 0).First(&tag)
 	return tag.ID > 0
 }
 
 func DeleteTag(id int) bool {
-	db.Where("id = ?", id).Delete(&Tag{})
+	db.Where("id = ? and deleted_on = ?", id, 0).Delete(&Tag{})
 	return true
 }
 
 func EditTag(id int, data interface{}) bool {
-	db.Model(&Tag{}).Where("id = ?", id).Updates(data)
+	db.Model(&Tag{}).Where("id = ? and deleted_on = ?", id, 0).Updates(data)
 	return true
 }

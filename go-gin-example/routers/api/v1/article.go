@@ -22,7 +22,7 @@ import (
 // @Router /api/v1/articles [get]
 func GetArticles(c *gin.Context) {
 	data := make(map[string]interface{})
-	maps := make(map[string]interface{})
+	maps := map[string]interface{}{"deleted_on": 0}
 	valid := validation.Validation{}
 
 	state := -1
