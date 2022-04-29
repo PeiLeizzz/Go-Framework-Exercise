@@ -21,43 +21,22 @@ type Model struct {
 	DeletedOn  int `json:"deleted_on"`
 }
 
-func init() {
-	var (
-		err error
-
-		dbType,
-		dbName,
-		user,
-		password,
-		host,
-		tablePrefix string
-	)
-
-	sec, err := setting.Cfg.GetSection("database")
-	if err != nil {
-		log.Fatal(2, "Fail to get section 'database': %v", err)
-	}
-
-	dbType = sec.Key("TYPE").String()
-	dbName = sec.Key("NAME").String()
-	user = sec.Key("USER").String()
-	password = sec.Key("PASSWORD").String()
-	host = sec.Key("HOST").String()
-	tablePrefix = sec.Key("TABLE_PREFIX").String()
-
+func Setup() {
 	dbURL := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset-utf8mb4&parseTime=True&loc=Local",
-		user,
-		password,
-		host,
-		dbName)
-	db, err = gorm.Open(dbType, dbURL)
+		setting.DatabaseSetting.User,
+		setting.DatabaseSetting.Password,
+		setting.DatabaseSetting.Host,
+		setting.DatabaseSetting.Name)
+	// 坑：千万不能不定义 err 就 db, err := gorm...... 这样会导致 db 是局部变量，外面的 db 没有被更新！
+	var err error
+	db, err = gorm.Open(setting.DatabaseSetting.Type, dbURL)
 
 	if err != nil {
 		log.Println(err)
 	}
 
 	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-		return tablePrefix + defaultTableName
+		return setting.DatabaseSetting.TablePrefix + defaultTableName
 	}
 
 	db.SingularTable(true) // 配置默认数据库表名 = 结构体名的单数（User -> user）

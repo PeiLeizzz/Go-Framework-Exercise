@@ -18,7 +18,7 @@ func GetPage(c *gin.Context) int {
 	}
 
 	if page > 1 {
-		result = (page - 1) * setting.PageSize
+		result = (page - 1) * setting.AppSetting.PageSize
 	}
 	return result
 }

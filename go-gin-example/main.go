@@ -5,17 +5,24 @@ import (
 	"log"
 	"syscall"
 
+	"github.com/PeiLeizzz/go-gin-example/models"
+	"github.com/PeiLeizzz/go-gin-example/pkg/logging"
 	"github.com/PeiLeizzz/go-gin-example/pkg/setting"
 	"github.com/PeiLeizzz/go-gin-example/routers"
 	"github.com/fvbock/endless"
 )
 
 func main() {
+	// 初始化
+	setting.Setup()
+	models.Setup()
+	logging.Setup()
+
 	// endless 热更新方法 ↓
-	endless.DefaultReadTimeOut = setting.ReadTimeout
-	endless.DefaultWriteTimeOut = setting.WriteTimeout
+	endless.DefaultReadTimeOut = setting.ServerSetting.ReadTimeout
+	endless.DefaultWriteTimeOut = setting.ServerSetting.WriteTimeout
 	endless.DefaultMaxHeaderBytes = 1 << 20
-	endPort := fmt.Sprintf(":%d", setting.HTTPPort)
+	endPort := fmt.Sprintf(":%d", setting.ServerSetting.HttpPort)
 
 	server := endless.NewServer(endPort, routers.InitRouter())
 	server.BeforeBegin = func(add string) {
@@ -24,7 +31,7 @@ func main() {
 
 	err := server.ListenAndServe()
 	if err != nil {
-		log.Printf("Server err: %V", err)
+		log.Printf("Server err: %v", err)
 	}
 
 	// http.Server 的 shutdown 方法 ↓
