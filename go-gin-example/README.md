@@ -54,3 +54,9 @@
     - `-a`：强制重新编译
     - `-installsuffix`：在软件包安装的目录中增加后缀标识，以保持输出与默认版本分开
     - `-o`：指定编译后的可执行文件名称
+
+### 2022-4-30
+#### Redis
+- Redis 命令
+  1. 启动 redis 服务 `brew services start redis` / `redis-server /usr/local/etc/redis.conf`
+  2. 关闭 redis 服务 `redis-cli shutdown`

@@ -17,7 +17,6 @@ import (
 // @Produce  json
 // @Param tag_id query int false "TagID"
 // @Param state query int false "State"
-// @Param created_by query int false "CreatedBy"
 // @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
 // @Router /api/v1/articles [get]
 func GetArticles(c *gin.Context) {
