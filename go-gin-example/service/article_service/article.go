@@ -25,7 +25,7 @@ type Article struct {
 }
 
 func (a *Article) Get() (*models.Article, error) {
-	var article *models.Article
+	article := &models.Article{}
 
 	cacheArticle := cache_service.Article{ID: a.ID}
 	key := cacheArticle.GetArticleKey()
@@ -34,8 +34,8 @@ func (a *Article) Get() (*models.Article, error) {
 		if err != nil {
 			logging.Info(err)
 		} else {
-			// 就算 article 是指针，也要传引用
-			json.Unmarshal(data, &article)
+			// 如果 article 初始化为 nil，这里要传 &article！
+			json.Unmarshal(data, article)
 			return article, nil
 		}
 	}

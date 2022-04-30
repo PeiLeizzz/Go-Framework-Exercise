@@ -50,7 +50,7 @@ func (t *Tag) GetAll() ([]*models.Tag, error) {
 }
 
 func (t *Tag) Get() (*models.Tag, error) {
-	var tag *models.Tag
+	tag := &models.Tag{}
 
 	cacheTag := cache_service.Tag{ID: t.ID}
 	key := cacheTag.GetTagKey()
@@ -59,7 +59,7 @@ func (t *Tag) Get() (*models.Tag, error) {
 		if err != nil {
 			logging.Info(err)
 		} else {
-			json.Unmarshal(data, &tag)
+			json.Unmarshal(data, tag)
 			return tag, nil
 		}
 	}
@@ -70,6 +70,15 @@ func (t *Tag) Get() (*models.Tag, error) {
 	}
 
 	gredis.Set(key, tag, 3600)
+	return tag, nil
+}
+
+func (t *Tag) GetWithNoCache() (*models.Tag, error) {
+	tag, err := models.GetTag(t.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return tag, nil
 }
 

@@ -168,7 +168,7 @@ func EditTag(c *gin.Context) {
 	}
 
 	// TODO: 如果标签名和原来的标签名一样，是不是也要允许更改？（只更改状态）
-	tag, err := tagService.Get()
+	tag, err := tagService.GetWithNoCache()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_CHECK_EXIST_TAG_FAIL, nil)
 		return
