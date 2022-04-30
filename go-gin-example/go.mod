@@ -56,8 +56,7 @@ replace (
 	github.com/PeiLeizzz/go-gin-example/docs => ../go-gin/example/docs
 	github.com/PeiLeizzz/go-gin-example/middleware => ../go-gin-example/middleware
 	github.com/PeiLeizzz/go-gin-example/models => ../go-gin-example/models
-	github.com/PeiLeizzz/go-gin-example/pkg/e => ../go-gin-example/pkg/e
-	github.com/PeiLeizzz/go-gin-example/pkg/setting => ../go-gin-example/pkg/setting
-	github.com/PeiLeizzz/go-gin-example/pkg/util => ../go-gin-example/pkg/util
+	github.com/PeiLeizzz/go-gin-example/pkg => ../go-gin-example/pkg
 	github.com/PeiLeizzz/go-gin-example/routers => ../go-gin-example/routers
+	github.com/PeiLeizzz/go-gin-example/service => ../go-gin-example/service
 )

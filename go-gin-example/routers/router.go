@@ -7,7 +7,7 @@ import (
 	"github.com/PeiLeizzz/go-gin-example/pkg/setting"
 	"github.com/PeiLeizzz/go-gin-example/pkg/upload"
 	"github.com/PeiLeizzz/go-gin-example/routers/api"
-	v1 "github.com/PeiLeizzz/go-gin-example/routers/api/v1"
+	v2 "github.com/PeiLeizzz/go-gin-example/routers/api/v2"
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
@@ -22,25 +22,25 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Recovery())
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	r.GET("/auth", api.GetAuth)
+	r.POST("/auth", api.GetAuth)
 	r.POST("/upload", api.UploadImage)
 	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
 
-	apiv1 := r.Group("/api/v1")
-	apiv1.Use(jwt.JWT())
+	apiv2 := r.Group("/api/v2")
+	apiv2.Use(jwt.JWT())
 	{
-		apiv1.GET("/tags", v1.GetTags)
-		apiv1.POST("/tags", v1.AddTag)
-		apiv1.PUT("/tags/:id", v1.EditTag)
-		apiv1.DELETE("/tags/:id", v1.DeleteTag)
+		apiv2.GET("/tags", v2.GetTags)
+		apiv2.POST("/tags", v2.AddTag)
+		apiv2.PUT("/tags/:id", v2.EditTag)
+		apiv2.DELETE("/tags/:id", v2.DeleteTag)
 	}
 
 	{
-		apiv1.GET("/articles", v1.GetArticles)
-		apiv1.GET("/articles/:id", v1.GetArticle)
-		apiv1.POST("/articles", v1.AddArticle)
-		apiv1.PUT("/articles/:id", v1.EditArticle)
-		apiv1.DELETE("/articles/:id", v1.DeleteArticle)
+		apiv2.GET("/articles", v2.GetArticles)
+		apiv2.GET("/articles/:id", v2.GetArticle)
+		apiv2.POST("/articles", v2.AddArticle)
+		apiv2.PUT("/articles/:id", v2.EditArticle)
+		apiv2.DELETE("/articles/:id", v2.DeleteArticle)
 	}
 	return r
 }

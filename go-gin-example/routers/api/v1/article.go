@@ -13,12 +13,14 @@ import (
 	"github.com/unknwon/com"
 )
 
-// @Summary 获取文章列表
-// @Produce  json
-// @Param tag_id query int false "TagID"
-// @Param state query int false "State"
-// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
-// @Router /api/v1/articles [get]
+/*
+Summary 获取文章列表
+Produce  json
+Param tag_id query int false "TagID"
+Param state query int false "State"
+Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+Router /api/v1/articles [get]
+*/
 func GetArticles(c *gin.Context) {
 	data := make(map[string]interface{})
 	maps := map[string]interface{}{"deleted_on": 0}
@@ -58,11 +60,13 @@ func GetArticles(c *gin.Context) {
 	})
 }
 
-// @Summary 获取指定文章
-// @Produce  json
-// @Param id path int true "ID"
-// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
-// @Router /api/v1/articles/{id} [get]
+/*
+Summary 获取指定文章
+Produce  json
+Param id path int true "ID"
+Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+Router /api/v1/articles/{id} [get]
+*/
 func GetArticle(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 
@@ -91,17 +95,19 @@ func GetArticle(c *gin.Context) {
 	})
 }
 
-// @Summary 新建文章
-// @Produce  json
-// @Param tag_id query int true "TagID"
-// @Param title query string true "Title"
-// @Param desc query string true "Desc"
-// @Param content query string true "Content"
-// @Param created_by query string true "CreatedBy"
-// @Param state query int true "State"
-// @Param cover_image_url string false "CoverImageUrl"
-// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
-// @Router /api/v1/articles [post]
+/*
+Summary 新建文章
+Produce  json
+Param tag_id query int true "TagID"
+Param title query string true "Title"
+Param desc query string true "Desc"
+Param content query string true "Content"
+Param created_by query string true "CreatedBy"
+Param state query int true "State"
+Param cover_image_url string false "CoverImageUrl"
+Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+Router /api/v1/articles [post]
+*/
 func AddArticle(c *gin.Context) {
 	tagId := com.StrTo(c.Query("tag_id")).MustInt()
 	title := c.Query("title")
@@ -156,18 +162,20 @@ func AddArticle(c *gin.Context) {
 	})
 }
 
-// @Summary 更新指定文章
-// @Produce  json
-// @Param id path int true "ID"
-// @Param tag_id body string false "TagID"
-// @Param title body string false "Title"
-// @Param desc body string false "Desc"
-// @Param content body string false "Content"
-// @Param modified_by body string true "ModifiedBy"
-// @Param state body int false "State"
-// @Param cover_image_url string false "CoverImageUrl"
-// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
-// @Router /api/v1/articles/{id} [put]
+/*
+Summary 更新指定文章
+Produce  json
+Param id path int true "ID"
+Param tag_id body string false "TagID"
+Param title body string false "Title"
+Param desc body string false "Desc"
+Param content body string false "Content"
+Param modified_by body string true "ModifiedBy"
+Param state body int false "State"
+Param cover_image_url string false "CoverImageUrl"
+Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+Router /api/v1/articles/{id} [put]
+*/
 func EditArticle(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 	tagId := com.StrTo(c.Query("tag_id")).MustInt()
@@ -240,11 +248,13 @@ func EditArticle(c *gin.Context) {
 	})
 }
 
-// @Summary 删除指定文章
-// @Produce  json
-// @Param id path int true "ID"
-// @Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
-// @Router /api/v1/articles/{id} [delete]
+/*
+Summary 删除指定文章
+Produce  json
+Param id path int true "ID"
+Success 200 {object} gin.H "{"code":200,"data":{},"msg":"ok"}"
+Router /api/v1/articles/{id} [delete]
+*/
 func DeleteArticle(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 

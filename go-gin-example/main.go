@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/PeiLeizzz/go-gin-example/models"
+	"github.com/PeiLeizzz/go-gin-example/pkg/gredis"
 	"github.com/PeiLeizzz/go-gin-example/pkg/logging"
 	"github.com/PeiLeizzz/go-gin-example/pkg/setting"
 	"github.com/PeiLeizzz/go-gin-example/routers"
@@ -17,6 +18,7 @@ func main() {
 	setting.Setup()
 	models.Setup()
 	logging.Setup()
+	gredis.Setup()
 
 	// endless 热更新方法 ↓
 	endless.DefaultReadTimeOut = setting.ServerSetting.ReadTimeout

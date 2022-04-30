@@ -3,56 +3,55 @@ package api
 import (
 	"net/http"
 
-	"github.com/PeiLeizzz/go-gin-example/models"
+	"github.com/PeiLeizzz/go-gin-example/pkg/app"
 	"github.com/PeiLeizzz/go-gin-example/pkg/e"
-	"github.com/PeiLeizzz/go-gin-example/pkg/logging"
 	"github.com/PeiLeizzz/go-gin-example/pkg/util"
-	"github.com/astaxie/beego/validation"
+	"github.com/PeiLeizzz/go-gin-example/service/auth_service"
 	"github.com/gin-gonic/gin"
 )
 
 type auth struct {
-	Username string `valid:"Required; MaxSize(50)"`
-	Password string `valid:"Required; MaxSize(50)"`
+	Username string `form:"username" valid:"Required; MaxSize(50)"`
+	Password string `form:"password" valid:"Required; MaxSize(50)"`
 }
 
+// @Summary 获取 token
+// @Accept mpfd
+// @Produce json
+// @Param username formData string true "username"
+// @Param password formData string true "password"
+// @Success 200 {object} app.Response
+// @Failure 500 {object} app.Response
+// @Router /auth [post]
 func GetAuth(c *gin.Context) {
-	username := c.Query("username")
-	password := c.Query("password")
+	var appG = app.Gin{C: c}
+	var form auth
 
-	valid := validation.Validation{}
-	a := auth{
-		Username: username,
-		Password: password,
-	}
-	ok, _ := valid.Valid(&a)
-
-	data := make(map[string]interface{})
-	code := e.INVALID_PARMAS
-
-	if ok {
-		// 登陆后才能获取 token
-		isExist := models.CheckAuth(username, password)
-		if isExist {
-			token, err := util.GenerateToken(username, password)
-			if err != nil {
-				code = e.ERROR_AUTH_TOKEN
-			} else {
-				data["token"] = token
-				code = e.SUCCESS
-			}
-		} else {
-			code = e.ERROR_AUTH
-		}
-	} else {
-		for _, err := range valid.Errors {
-			logging.Info(err.Key, err.Message)
-		}
+	httpCode, errCode := app.BindAndValid(c, &form)
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		"data": data,
-	})
+	authService := auth_service.Auth{
+		Username: form.Username,
+		Password: form.Password,
+	}
+	exists, err := authService.Check()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+	if !exists {
+		appG.Response(http.StatusUnauthorized, e.ERROR_AUTH, nil)
+	}
+
+	token, err := util.GenerateToken(form.Username, form.Password)
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_AUTH_TOKEN, nil)
+		return
+	}
+
+	data := map[string]string{"token": token}
+	appG.Response(http.StatusOK, e.SUCCESS, data)
 }

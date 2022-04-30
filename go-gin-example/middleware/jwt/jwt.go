@@ -2,10 +2,10 @@ package jwt
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/PeiLeizzz/go-gin-example/pkg/e"
 	"github.com/PeiLeizzz/go-gin-example/pkg/util"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,16 +15,18 @@ func JWT() gin.HandlerFunc {
 		var data interface{}
 
 		code = e.SUCCESS
-		token := c.Query("token")
+		token := c.Request.Header.Get("x-token")
 		if token == "" {
 			code = e.INVALID_PARMAS
 		} else {
-			claims, err := util.ParseToken(token)
-			// 有问题：超时了直接在 err 里显示了，而不会走下面的分支
+			_, err := util.ParseToken(token)
 			if err != nil {
-				code = e.ERROR_AUTH_CHECK_TOKEN_FAIL
-			} else if time.Now().Unix() > claims.ExpiresAt {
-				code = e.ERROR_AUTH_CHECK_TOKEN_TIMEOUT
+				switch err.(*jwt.ValidationError).Errors {
+				case jwt.ValidationErrorExpired:
+					code = e.ERROR_AUTH_CHECK_TOKEN_TIMEOUT
+				default:
+					code = e.ERROR_AUTH_CHECK_TOKEN_FAIL
+				}
 			}
 		}
 
