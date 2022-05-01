@@ -60,3 +60,4 @@
 - Redis 命令
   1. 启动 redis 服务 `brew services start redis` / `redis-server /usr/local/etc/redis.conf`
   2. 关闭 redis 服务 `redis-cli shutdown`
+- TODO: Redis 和 MySQL 的双写一致性
