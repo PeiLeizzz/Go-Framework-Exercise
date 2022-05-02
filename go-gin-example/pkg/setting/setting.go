@@ -26,6 +26,9 @@ type App struct {
 	ExportSavePath string
 
 	QrCodeSavePath string
+
+	FontSavePath string
+	FontFileName string
 }
 
 var AppSetting = &App{}

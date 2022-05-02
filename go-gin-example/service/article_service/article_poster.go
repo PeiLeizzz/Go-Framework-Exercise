@@ -4,10 +4,13 @@ import (
 	"image"
 	"image/draw"
 	"image/jpeg"
+	"io/ioutil"
 	"os"
 
 	"github.com/PeiLeizzz/go-gin-example/pkg/file"
 	"github.com/PeiLeizzz/go-gin-example/pkg/qrcode"
+	"github.com/PeiLeizzz/go-gin-example/pkg/setting"
+	"github.com/golang/freetype"
 )
 
 type ArticlePoster struct {
@@ -33,18 +36,17 @@ func (a *ArticlePoster) CheckMergedImage(path string) bool {
 }
 
 type ArticlePosterBg struct {
-	Name string
+	BgName string
 	*ArticlePoster
 	*Rect
 	*Pt
 }
 
 type Rect struct {
-	Name string
-	X0   int
-	Y0   int
-	X1   int
-	Y1   int
+	X0 int
+	Y0 int
+	X1 int
+	Y1 int
 }
 
 type Pt struct {
@@ -52,9 +54,9 @@ type Pt struct {
 	Y int
 }
 
-func NewArticlePosterBg(name string, ap *ArticlePoster, rect *Rect, pt *Pt) *ArticlePosterBg {
+func NewArticlePosterBg(bgName string, ap *ArticlePoster, rect *Rect, pt *Pt) *ArticlePosterBg {
 	return &ArticlePosterBg{
-		Name:          name,
+		BgName:        bgName,
 		ArticlePoster: ap,
 		Rect:          rect,
 		Pt:            pt,
@@ -70,7 +72,7 @@ func (a *ArticlePosterBg) Generate(path string) error {
 	// 检查图像是否已经存在
 	if !a.CheckMergedImage(path) {
 		// 打开背景图
-		bgF, err := file.Open(path+a.Name, os.O_RDWR, 0644)
+		bgF, err := file.Open(path+a.BgName, os.O_RDWR, 0644)
 		if err != nil {
 			return err
 		}
@@ -110,8 +112,83 @@ func (a *ArticlePosterBg) Generate(path string) error {
 		// 在指定 Point 上绘制二维码
 		draw.Draw(jpg, jpg.Bounds(), qrImage, qrImage.Bounds().Min.Sub(image.Pt(a.Pt.X, a.Pt.Y)), draw.Over)
 
-		// 将合并的图像以 JPEG 4：2：0 基线格式写入文件
-		jpeg.Encode(mergedF, jpg, nil)
+		err = a.DrawPoster(&DrawText{
+			JPG:    jpg,
+			Merged: mergedF,
+
+			Title: "Golang Gin Demo",
+			X0:    80,
+			Y0:    160,
+			Size0: 42,
+
+			SubTitle: "---PeiLei",
+			X1:       320,
+			Y1:       220,
+			Size1:    36,
+		}, setting.AppSetting.FontFileName)
+
+		if err != nil {
+			file.Delete(a.PosterName, path) // ignore err
+			return err
+		}
+	}
+
+	return nil
+}
+
+type DrawText struct {
+	JPG    draw.Image
+	Merged *os.File
+
+	Title string
+	X0    int
+	Y0    int
+	Size0 float64
+
+	SubTitle string
+	X1       int
+	Y1       int
+	Size1    float64
+}
+
+func (a *ArticlePosterBg) DrawPoster(d *DrawText, fontName string) error {
+	fontSource := setting.AppSetting.RuntimeRootPath + setting.AppSetting.FontSavePath + fontName
+	fontSourceBytes, err := ioutil.ReadFile(fontSource)
+	if err != nil {
+		return err
+	}
+
+	trueTypeFont, err := freetype.ParseFont(fontSourceBytes)
+	if err != nil {
+		return err
+	}
+
+	fc := freetype.NewContext()
+	fc.SetDPI(72)
+	fc.SetFont(trueTypeFont)
+	fc.SetFontSize(d.Size0)
+	// 设置剪裁矩形进行绘制
+	fc.SetClip(d.JPG.Bounds())
+	// 目标图像
+	fc.SetDst(d.JPG)
+	// 源图像，通常为 image.Uniform
+	fc.SetSrc(image.White)
+
+	pt := freetype.Pt(d.X0, d.Y0)
+	_, err = fc.DrawString(d.Title, pt)
+	if err != nil {
+		return err
+	}
+
+	fc.SetFontSize(d.Size1)
+	_, err = fc.DrawString(d.SubTitle, freetype.Pt(d.X1, d.Y1))
+	if err != nil {
+		return err
+	}
+
+	err = jpeg.Encode(d.Merged, d.JPG, nil)
+	if err != nil {
+		return err
 	}
 
 	return nil
