@@ -1,6 +1,6 @@
 ## 一个 Gin 的 Demo
 
-- 用到的技术有：`gin`、`gorm`、`jwt-go`、`ini`、`swagger`、`redis`、`docker`
+- 用到的技术有：`gin`、`gorm`、`jwt-go`、`ini`、`swagger`、`redis`、`docker`、`nginx`
 
 ### 2022-4-27 
 
@@ -100,3 +100,52 @@
   build:
     @go build -v .
   ```
+
+#### Nginx
+- Nginx 命令：
+  1. `nginx`：启动
+  2. `nginx -s stop`：立刻停止
+  3. `nginx -s reload`：重新加载配置文件
+  4. `nginx -s quit`：平滑停止
+  5. `nginx -t`：测试配置文件是否正确，同时也可以用来查看配置文件所在位置
+  6. `nginx -v`：显示 Nginx 版本信息
+  7. `nginx -V`：显示 Nginx 版本信息、编译器和配置参数的信息
+- 涉及配置：
+  1. `proxy_pass`：配置反向代理的路径（如果 `proxy_pass` 的 `url` 最后为 `/` 表示绝对路径，会去掉匹配的前缀，否则为相对路径）
+       - ```nginx
+          location /proxy {
+            proxy_pass http://192.168.137.181:8080/
+          }
+          ```
+          当访问 `http://127.0.0.1/proxy/test/test.txt` 时，会被转发到 `http://192.168.137.181:8081/test/test.txt`
+       - ```nginx
+          location /proxy {
+            proxy_pass http://192.168.137.181:8080
+          }
+          ```
+          当访问 `http://127.0.0.1/proxy/test/test.txt` 时，会被转发到 `http://192.168.137.181:8081/proxy/test/test.txt`
+  2. `upstream`：配置**负载均衡**，默认以**轮询**的方式进行负载，还支持四种模式：
+     1. `weight`：权重，指定轮询的概率，`weight` 与访问概率成正比
+     2. `ip_hash`：按照访问 IP 的 hash 结果值分配
+     3. `fair`：按后端服务器响应时间进行分配，响应时间越短优先级别越高
+     4. `url_hash`：按照 URL 的 hash 结果值分配
+    具体配置：例如启动了两个端口的服务 `127.0.0.1:8001` 和 `127.0.0.1:8002`，在 `nginx.conf` 的 `upstream` 节点中进行如下配置：
+      ```nginx
+      http {
+        # ...
+        upstream api.blog.com {
+          server 127.0.0.1:8081;
+          server 127.0.0.1:8082;
+        }
+
+        server {
+          listen: xxxx;
+          server_name: xxxx;
+
+          location / {
+            # http:// + upstream 的节点名称
+            proxy_pass http://api.blog.com/;
+          }
+        }
+      }
+      ```

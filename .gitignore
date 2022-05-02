@@ -1,3 +1,7 @@
 /*-test
-/go-gin-example/docs
-/go-gin-example/runtime/upload/images
+/go-gin-example/docs/*
+/go-gin-example/runtime/upload/images/*
+/go-gin-example/runtime/exports/*
+/go-gin-example/runtime/fonts/*
+/go-gin-example/runtime/logs/*
+/go-gin-example/runtime/qrcode/*
