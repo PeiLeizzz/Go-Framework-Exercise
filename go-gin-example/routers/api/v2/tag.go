@@ -5,6 +5,8 @@ import (
 
 	"github.com/PeiLeizzz/go-gin-example/pkg/app"
 	"github.com/PeiLeizzz/go-gin-example/pkg/e"
+	"github.com/PeiLeizzz/go-gin-example/pkg/export"
+	"github.com/PeiLeizzz/go-gin-example/pkg/logging"
 	"github.com/PeiLeizzz/go-gin-example/pkg/setting"
 	"github.com/PeiLeizzz/go-gin-example/pkg/util"
 	"github.com/PeiLeizzz/go-gin-example/service/tag_service"
@@ -14,7 +16,7 @@ import (
 )
 
 // @Summary 获取标签列表
-// @Produce  json
+// @Produce json
 // @Param name query string false "Name"
 // @Param state query int false "State"
 // @Security x-token
@@ -75,7 +77,7 @@ type AddTagForm struct {
 
 // @Summary 新建文章标签
 // @Accept mpfd
-// @Produce  json
+// @Produce json
 // @Param name formData string true "Name"
 // @Param created_by formData string true "CreatedBy"
 // @Param state formData int true "State"
@@ -128,7 +130,7 @@ type EditTagForm struct {
 
 // @Summary 更新指定标签
 // @Accept mpfd
-// @Produce  json
+// @Produce json
 // @Param id path int true "ID"
 // @Param name formData string true "Name"
 // @Param modified_by formData string true "ModifiedBy"
@@ -195,7 +197,7 @@ func EditTag(c *gin.Context) {
 }
 
 // @Summary 删除指定标签
-// @Produce  json
+// @Produce json
 // @Param id path int true "ID"
 // @Security x-token
 // @param x-token header string true "Authorization"
@@ -233,6 +235,84 @@ func DeleteTag(c *gin.Context) {
 	err = tagService.Delete()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_TAG_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+// @Summary 导出标签（Excel）
+// @Accept mpfd
+// @Produce json
+// @Param name formData string false "Name"
+// @Param state formData int false "State"
+// @Security x-token
+// @param x-token header string true "Authorization"
+// @Success 200 {object} app.Response
+// @Failure 500 {object} app.Response
+// @Router /api/v2/tags/export [post]
+func ExportTag(c *gin.Context) {
+	appG := app.Gin{C: c}
+	valid := validation.Validation{}
+
+	name := c.PostForm("name")
+	if name != "" {
+		valid.MaxSize(name, 100, "name").Message("标签名字最多 100 个字符")
+	}
+
+	state := -1
+	if arg := c.PostForm("state"); arg != "" {
+		state = com.StrTo(arg).MustInt()
+		valid.Range(state, 0, 1, "state").Message("状态只允许 0 或 1")
+	}
+
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusBadRequest, e.INVALID_PARMAS, nil)
+		return
+	}
+
+	tagService := tag_service.Tag{
+		Name:  name,
+		State: state,
+	}
+
+	filename, err := tagService.Export()
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_EXPORT_TAG_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, map[string]string{
+		"export_url":      export.GetExcelFullUrl(filename),
+		"export_save_url": export.GetExportPath() + filename,
+	})
+}
+
+// @Summary 导入标签（Excel）
+// @Accept mpfd
+// @Produce json
+// @Param file formData file true "Tags Excel File"
+// @Security x-token
+// @param x-token header string true "Authorization"
+// @Success 200 {object} app.Response
+// @Failure 500 {object} app.Response
+// @Router /api/v2/tags/import [post]
+func ImportTag(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	file, _, err := c.Request.FormFile("file")
+	if err != nil {
+		logging.Warn(err)
+		appG.Response(http.StatusInternalServerError, e.ERROR, nil)
+		return
+	}
+
+	tagService := tag_service.Tag{}
+	err = tagService.Import(file)
+	if err != nil {
+		logging.Warn(err)
+		appG.Response(http.StatusOK, e.ERROR_IMPORT_TAG_FAIL, nil)
 		return
 	}
 

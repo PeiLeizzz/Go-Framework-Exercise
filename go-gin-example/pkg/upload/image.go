@@ -1,10 +1,8 @@
 package upload
 
 import (
-	"fmt"
 	"log"
 	"mime/multipart"
-	"os"
 	"strings"
 
 	"github.com/PeiLeizzz/go-gin-example/pkg/file"
@@ -13,9 +11,9 @@ import (
 	"github.com/PeiLeizzz/go-gin-example/pkg/util"
 )
 
-// 图片的网络路径 http://127.0.0.1:8000/upload/images/xxx.png
+// 图片的网络路径 http://127.0.0.1:8000/upload/images/name
 func GetImageFullUrl(name string) string {
-	return setting.AppSetting.ImagePrefixUrl + "/" + GetImagePath() + name
+	return setting.AppSetting.PrefixUrl + "/" + GetImagePath() + name
 }
 
 // 图片的本地路径 upload/images/
@@ -28,7 +26,7 @@ func GetImageFullPath() string {
 	return setting.AppSetting.RuntimeRootPath + GetImagePath()
 }
 
-// MD5 计算后的图片名称
+// MD5 计算后的图片名称（包含扩展名）
 func GetImageName(name string) string {
 	ext := file.GetExt(name)
 	fileName := strings.TrimSuffix(name, ext)
@@ -56,24 +54,4 @@ func CheckImageSize(f multipart.File) bool {
 		return false
 	}
 	return size <= setting.AppSetting.ImageMaxSize
-}
-
-// 检查文件夹权限、创建文件夹等
-func CheckImage(src string) error {
-	dir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("os.Getwd err: %v", err)
-	}
-
-	permDenied := file.CheckPermission(dir + "/" + src)
-	if permDenied {
-		return fmt.Errorf("file.CheckPermission Permission denied src: %s", src)
-	}
-
-	err = file.IsNotExistMkDir(dir + "/" + src)
-	if err != nil {
-		return fmt.Errorf("file.IsNotExistMkDir err: %v", err)
-	}
-
-	return nil
 }

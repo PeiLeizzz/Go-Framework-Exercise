@@ -222,6 +222,7 @@ func EditArticle(c *gin.Context) {
 	// 在 Tag 中也有这个问题
 	// 可能的解决办法：1. 修改数据库 1 为启用，2 为禁用
 	//				2. 能否给 state 加一个默认值？
+	//				3. 先把 article 查出来，再更新结构体，再 Edit？
 	articleService := article_service.Article{
 		ID:         form.ID,
 		TagID:      form.TagID,
@@ -306,3 +307,5 @@ func DeleteArticle(c *gin.Context) {
 
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
+
+// TODO: 文章的导入导出

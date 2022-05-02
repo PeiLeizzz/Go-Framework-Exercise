@@ -1,6 +1,7 @@
 package file
 
 import (
+	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"os"
@@ -51,4 +52,24 @@ func Open(name string, flag int, perm os.FileMode) (*os.File, error) {
 		return nil, err
 	}
 	return f, nil
+}
+
+// 检查文件夹权限、创建文件夹等
+func CheckDir(src string) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("os.Getwd err: %v", err)
+	}
+
+	permDenied := CheckPermission(dir + "/" + src)
+	if permDenied {
+		return fmt.Errorf("file.CheckPermission Permission denied src: %s", src)
+	}
+
+	err = IsNotExistMkDir(dir + "/" + src)
+	if err != nil {
+		return fmt.Errorf("file.IsNotExistMkDir err: %v", err)
+	}
+
+	return nil
 }

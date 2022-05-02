@@ -352,6 +352,67 @@ paths:
       security:
       - x-token: []
       summary: 更新指定标签
+  /api/v2/tags/export:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Name
+        in: formData
+        name: name
+        type: string
+      - description: State
+        in: formData
+        name: state
+        type: integer
+      - description: Authorization
+        in: header
+        name: x-token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.Response'
+      security:
+      - x-token: []
+      summary: 导出标签（Excel）
+  /api/v2/tags/import:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Tags Excel File
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Authorization
+        in: header
+        name: x-token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.Response'
+      security:
+      - x-token: []
+      summary: 导入标签（Excel）
   /auth:
     post:
       consumes:
