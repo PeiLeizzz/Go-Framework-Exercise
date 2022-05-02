@@ -54,6 +54,39 @@ func Open(name string, flag int, perm os.FileMode) (*os.File, error) {
 	return f, nil
 }
 
+func MustOpen(fileName, filePath string) (*os.File, error) {
+	if err := CheckDir(filePath); err != nil {
+		return nil, err
+	}
+
+	dir, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("os.Getwd err: %v", err)
+	}
+
+	src := dir + "/" + filePath
+	f, err := Open(src+fileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("Fail to OpenFile: %v", err)
+	}
+
+	return f, nil
+}
+
+func Delete(fileName, filePath string) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("os.Getwd err: %v", err)
+	}
+
+	src := dir + "/" + filePath
+	if err := os.Remove(src + fileName); err != nil {
+		return fmt.Errorf("os.Remove err: %v", err)
+	}
+
+	return nil
+}
+
 // 检查文件夹权限、创建文件夹等
 func CheckDir(src string) error {
 	dir, err := os.Getwd()

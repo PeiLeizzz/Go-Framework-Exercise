@@ -214,6 +214,30 @@ paths:
       security:
       - x-token: []
       summary: 更新指定文章
+  /api/v2/articles/poster/generate:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Authorization
+        in: header
+        name: x-token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.Response'
+      security:
+      - x-token: []
+      summary: 生成文章二维码
   /api/v2/tags:
     get:
       parameters:

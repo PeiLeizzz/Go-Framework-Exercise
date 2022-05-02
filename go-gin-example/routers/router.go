@@ -5,6 +5,7 @@ import (
 
 	"github.com/PeiLeizzz/go-gin-example/middleware/jwt"
 	"github.com/PeiLeizzz/go-gin-example/pkg/export"
+	"github.com/PeiLeizzz/go-gin-example/pkg/qrcode"
 	"github.com/PeiLeizzz/go-gin-example/pkg/setting"
 	"github.com/PeiLeizzz/go-gin-example/pkg/upload"
 	"github.com/PeiLeizzz/go-gin-example/routers/api"
@@ -27,6 +28,7 @@ func InitRouter() *gin.Engine {
 	r.POST("/upload", api.UploadImage)
 	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
 	r.StaticFS("/export/tags", http.Dir(export.GetExcelFullPath()))
+	r.StaticFS("/qrcode", http.Dir(qrcode.GetQrCodeFullPath()))
 
 	apiv2 := r.Group("/api/v2")
 	apiv2.Use(jwt.JWT())
@@ -45,6 +47,7 @@ func InitRouter() *gin.Engine {
 		apiv2.POST("/articles", v2.AddArticle)
 		apiv2.PUT("/articles/:id", v2.EditArticle)
 		apiv2.DELETE("/articles/:id", v2.DeleteArticle)
+		apiv2.POST("/articles/poster/generate", v2.GenerateArticlePoster)
 	}
 	return r
 }

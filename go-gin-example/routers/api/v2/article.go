@@ -5,11 +5,13 @@ import (
 
 	"github.com/PeiLeizzz/go-gin-example/pkg/app"
 	"github.com/PeiLeizzz/go-gin-example/pkg/e"
+	"github.com/PeiLeizzz/go-gin-example/pkg/qrcode"
 	"github.com/PeiLeizzz/go-gin-example/pkg/setting"
 	"github.com/PeiLeizzz/go-gin-example/pkg/util"
 	"github.com/PeiLeizzz/go-gin-example/service/article_service"
 	"github.com/PeiLeizzz/go-gin-example/service/tag_service"
 	"github.com/astaxie/beego/validation"
+	"github.com/boombuler/barcode/qr"
 	"github.com/gin-gonic/gin"
 	"github.com/unknwon/com"
 )
@@ -306,6 +308,57 @@ func DeleteArticle(c *gin.Context) {
 	}
 
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+const (
+	// TODO: 这里之后需要改为文章 id 对应的前端路径
+	QRCODE_URL                = "https://github.com/EDDYCJY/blog#gin%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95"
+	BACKGROUND_IMAGE_FILENAME = "bg.jpg"
+)
+
+// @Summary 生成文章二维码
+// @Accept mpfd
+// @Produce  json
+// @Security x-token
+// @param x-token header string true "Authorization"
+// @Success 200 {object} app.Response
+// @Failure 500 {object} app.Response
+// @Router /api/v2/articles/poster/generate [post]
+// TODO: 这里之后要有个 path {id} 参数，得到对应的文章链接，再传入 NewQrCode
+func GenerateArticlePoster(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	article := &article_service.Article{}                        // 之后改为具体的文章
+	qrc := qrcode.NewQrCode(QRCODE_URL, 300, 300, qr.M, qr.Auto) // 具体文章的路径
+
+	posterName := article_service.GetPosterFlag() + "-" + qrcode.GetQrCodeFileName(qrc.URL) + qrc.GetQrCodeExt()
+
+	articlePosterBgService := article_service.NewArticlePosterBg(
+		BACKGROUND_IMAGE_FILENAME,
+		article_service.NewArticlePoster(posterName, article, qrc),
+		&article_service.Rect{
+			X0: 0,
+			Y0: 0,
+			X1: 550,
+			Y1: 700,
+		},
+		&article_service.Pt{
+			X: 125,
+			Y: 298,
+		},
+	)
+
+	path := qrcode.GetQrCodeFullPath()
+	if err := articlePosterBgService.Generate(path); err != nil {
+		appG.Response(http.StatusOK, e.ERROR_GEN_ARTICLE_POSTER_FAIL, nil)
+		return
+	}
+
+	data := map[string]string{
+		"poster_url":      qrcode.GetQrCodeFullUrl(posterName),
+		"poster_save_url": path + posterName,
+	}
+	appG.Response(http.StatusOK, e.SUCCESS, data)
 }
 
 // TODO: 文章的导入导出
