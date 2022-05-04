@@ -96,6 +96,7 @@ func (client *Client) removeCall(seq uint64) *Call {
 // 服务端或客户端发生错误时调用，并且将错误信息通知所有 pending 状态的 call
 func (client *Client) terminateCalls(err error) {
 	// TODO: 为什么这里要加 sending 锁？
+	// 防止产生错误要终止 client 时，还有新的消息在 send()
 	client.sending.Lock()
 	defer client.sending.Unlock()
 	client.mu.Lock()
