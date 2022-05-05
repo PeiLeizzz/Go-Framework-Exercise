@@ -16,3 +16,8 @@
   1. 在客户端创建与服务端的连接时（`client.dialTimeout()`）
   2. 客户端在 `client.Call()` 统一处理整个过程产生的超时（包含客户端发送报文、等待服务端处理、客户端接收报文）
   3. 服务端处理报文时（`Server.handleRequest`）
+
+#### 支持 HTTP 协议
+- 个人理解这章做的事情就是在原先 TCP 通信的基础上，套了一层对于通过 HTTP 建立连接的支持：Client 可以通过 `CONNECT` 报文与 RPC Server 建立连接（类似于一次握手，这就是这章增加的部分），之后通信还是用的 RPC 协议（基于 HTTP 下层的 TCP 连接）；而在之前的纯 TCP 通信中，并没有这一次握手的实现，而是直接在 TCP 连接上通过 RPC 协议通信。
+- 而对于 Client 来说，协议的转换是透明、无法感知的，Client 去请求调用函数仍旧像之前纯 TCP 一样，采用 `Call` 方式即可，而基于 HTTP 则可以为 Client 额外开放其他的 HTTP 服务。（即本章的 HTTP = 原先 TCP RPC + HTTP PATH 服务）
+- 提供 HTTP 来建立连接的好处在于，Server 可以监听一个 TCP 端口，基于这个端口，提供对于不同 PATH 的 HTTP 服务。

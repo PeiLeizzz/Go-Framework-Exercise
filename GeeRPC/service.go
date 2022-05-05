@@ -43,6 +43,10 @@ func (m *methodType) newReplyv() reflect.Value {
 	return replyv
 }
 
+/**
+ * 一个 service 对应一个结构体
+ * 储存了结构体的名称、实例本身及所有符合条件的可调用、已注册方法
+ */
 type service struct {
 	name   string                 // 映射的结构体的名称（T）
 	typ    reflect.Type           // 结构体的类型

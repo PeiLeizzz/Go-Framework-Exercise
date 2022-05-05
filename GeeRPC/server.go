@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"reflect"
 	"strings"
 	"sync"
@@ -255,4 +256,53 @@ func (server *Server) handleRequest(cc codec.Codec, req *request,
 	case <-called:
 		<-sent
 	}
+}
+
+// ----- 支持 HTTP -----
+
+const (
+	connected        = "200 Connected to Gee RPC"
+	defaultRPCPath   = "/_geerpc_"
+	defaultDebugPath = "/debug/geerpc"
+)
+
+/**
+ * 用于处理 client 发来的 CONNECT 请求，并且将后续的通信转换为 RPC
+ * 如连接成功，则返回正确响应，并且通过 HTTP 下层的 TCP 与 client 建立 RPC 连接（切换为 RPC）
+ * 该函数本身在 net/http 包的处理中就是在协程中的，
+ * 因此 RPC 连接的效果与 Accept() 中一样，可以支持多个客户端
+ */
+func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "CONNECT" {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_, _ = io.WriteString(w, "405 must CONNECT\n")
+		return
+	}
+	// 获取 TCP 套接字，接管 HTTP 连接
+	conn, _, err := w.(http.Hijacker).Hijack()
+	if err != nil {
+		log.Print("rpc hijacking", req.RemoteAddr, ":", err.Error())
+		return
+	}
+	// 返回连接成功的响应
+	_, _ = io.WriteString(conn, "HTTP/1.0 "+connected+"\n\n")
+	// 切换为 RPC 形式与 client 建立连接（与 Accept() 中的 go server.ServeConn 效果一样）
+	server.ServeConn(conn)
+}
+
+/**
+ * HTTP 路由处理器（与 Accept() 是相互独立的）
+ * defaultRPCPath -> server 处理与远程地址的连接（客户端可以向该地址发送 CONNECT 请求），之后与客户端建立 RPC 连接
+ * 其他路径可以提供一些别的功能（例如日志、统计等）
+ * e.g. defaultDebugPath -> debugHTTP 处理逻辑
+ */
+func (server *Server) HandleHTTP() {
+	http.Handle(defaultRPCPath, server)
+	http.Handle(defaultDebugPath, debugHTTP{server})
+	log.Println("rpc server debug path:", defaultDebugPath)
+}
+
+func HandleHTTP() {
+	DefaultServer.HandleHTTP()
 }

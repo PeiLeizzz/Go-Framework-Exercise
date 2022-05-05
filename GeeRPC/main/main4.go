@@ -13,7 +13,7 @@ func (f Foo) Timeout(args Args, reply *int) error {
 	return nil
 }
 
-func main() {
+func main4() {
 	log.SetFlags(0)
 	addr := make(chan string)
 	go startServer(addr)
