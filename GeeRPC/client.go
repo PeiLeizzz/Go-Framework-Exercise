@@ -1,6 +1,7 @@
 package geerpc
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 )
 
 /**
@@ -187,12 +189,23 @@ func parseOptions(opts ...*Option) (*Option, error) {
 	return opt, nil
 }
 
-func Dial(network, address string, opts ...*Option) (client *Client, err error) {
+type clientResult struct {
+	client *Client
+	err    error
+}
+
+type newClientFunc func(conn net.Conn, opt *Option) (*Client, error)
+
+/**
+ * 客户端处理连接超时
+ */
+func dialTimeout(f newClientFunc, network, address string, opts ...*Option) (client *Client, err error) {
 	opt, err := parseOptions(opts...)
 	if err != nil {
 		return nil, err
 	}
-	conn, err := net.Dial(network, address)
+
+	conn, err := net.DialTimeout(network, address, opt.ConnectTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -200,11 +213,36 @@ func Dial(network, address string, opts ...*Option) (client *Client, err error) 
 	// 如果 NewClient 中 client 建立出错（nil）
 	// 就把 conn 关闭
 	defer func() {
-		if client == nil {
+		if err != nil {
 			_ = conn.Close()
 		}
 	}()
-	return NewClient(conn, opt)
+
+	ch := make(chan clientResult)
+	go func() {
+		client, err := f(conn, opt)
+		ch <- clientResult{
+			client: client,
+			err:    err,
+		}
+	}()
+
+	if opt.ConnectTimeout == 0 {
+		result := <-ch
+		return result.client, result.err
+	}
+
+	select {
+	case <-time.After(opt.ConnectTimeout):
+		// TODO: 超时退出后上面协程中的 ch 可能被阻塞，会导致泄漏
+		return nil, fmt.Errorf("rpc client: connect timeout: expect within %s", opt.ConnectTimeout)
+	case result := <-ch:
+		return result.client, result.err
+	}
+}
+
+func Dial(network, address string, opts ...*Option) (client *Client, err error) {
+	return dialTimeout(NewClient, network, address, opts...)
 }
 
 /**
@@ -245,6 +283,19 @@ func (client *Client) send(call *Call) {
  * done 缓冲区的作用：可以给多个 client.Go 传入同一个 done 对象，
  * 从而控制异步请求并发的数量（可以阻塞 receive 中的 call.done()）
  * 但不会阻塞发送（send）
+ *
+ * e.g. 异步使用
+ *     call := client.Go( ... )
+ *     go func(call *Call) {
+ *         select {
+ *             <- call.Done:
+ *                 // do something
+ *             <- otherChan:
+ *                 // do something
+ *         }
+ *     }(call)
+ *
+ *     otherFunc()
  */
 func (client *Client) Go(serviceMethod string, args, reply interface{}, done chan *Call) *Call {
 	if done == nil {
@@ -265,8 +316,22 @@ func (client *Client) Go(serviceMethod string, args, reply interface{}, done cha
 /**
  * 同步接口，会被阻塞
  * Call 会等待函数执行完成 Call -> Go -> send -> call.done
+ * 超时处理通过 context 来完成，交给用户控制
+ * e.g.
+ *     ctx, _ := context.WithTimeout(context.Background(), time.Second)
+ *     var reply int
+ *     err := client.Call(ctx, "Foo.Sum", &Args{1, 2}, &reply)
+ *     // ...
  */
-func (client *Client) Call(serviceMethod string, args, reply interface{}) error {
-	call := <-client.Go(serviceMethod, args, reply, make(chan *Call, 1)).Done
-	return call.Error
+func (client *Client) Call(ctx context.Context, serviceMethod string, args, reply interface{}) error {
+	call := client.Go(serviceMethod, args, reply, make(chan *Call, 1))
+	select {
+	case <-ctx.Done():
+		client.removeCall(call.Seq)
+		// 若是该函数退出后 receive 又收到了响应，call.done() 岂不是会阻塞导致 receive 被阻塞？
+		// 其实不会，因为 call.Done 有至少 一个单位 的缓冲区，call.done() 可以正常执行
+		return errors.New("rpc client: call failed: " + ctx.Err().Error())
+	case call := <-call.Done:
+		return call.Error
+	}
 }
