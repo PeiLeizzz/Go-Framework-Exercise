@@ -20,6 +20,10 @@ func main() {
 	logging.Setup()
 	gredis.Setup()
 
+	defer func() {
+		models.CloseDB()
+	}()
+
 	// endless 热更新方法 ↓
 	endless.DefaultReadTimeOut = setting.ServerSetting.ReadTimeout
 	endless.DefaultWriteTimeOut = setting.ServerSetting.WriteTimeout
