@@ -199,6 +199,7 @@ func NewHTTPClient(conn net.Conn, opt *Option) (*Client, error) {
 
 	// 通过 HTTP CONNECT 请求建立连接后，后续通信过程切换为 RPC 协议
 	if err == nil && resp.Status == connected {
+		log.Println("rpc client: connected with http rpc server")
 		return NewClient(conn, opt)
 	}
 	if err == nil {

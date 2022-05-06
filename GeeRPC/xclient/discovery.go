@@ -27,7 +27,7 @@ type Discovery interface {
 }
 
 /**
- * 不需要注册中心，服务列表由手动维护的服务发现
+ * 不需要注册中心，服务列表由手动维护的一个服务发现实例
  */
 type MultiServersDiscovery struct {
 	r       *rand.Rand

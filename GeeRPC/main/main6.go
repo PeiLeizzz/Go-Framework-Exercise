@@ -83,7 +83,7 @@ func broadcast6(addr1, addr2 string) {
 	wg.Wait()
 }
 
-func main() {
+func main6() {
 	log.SetFlags(0)
 	ch1 := make(chan string)
 	ch2 := make(chan string)
