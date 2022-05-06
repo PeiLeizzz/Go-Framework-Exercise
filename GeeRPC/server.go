@@ -135,7 +135,11 @@ func (server *Server) ServeConn(conn io.ReadWriteCloser) {
 		log.Printf("rpc server: invalid codec type %s", opt.CodecType)
 		return
 	}
-
+	// 发送 options 响应给 client，防止 options 粘包
+	if err := json.NewEncoder(conn).Encode(opt); err != nil {
+		log.Println("rpc server: options encode error:", err)
+		return
+	}
 	server.serveCodec(f(conn), &opt)
 }
 
@@ -228,8 +232,8 @@ func (server *Server) sendResponse(cc codec.Codec, h *codec.Header, body interfa
 func (server *Server) handleRequest(cc codec.Codec, req *request,
 	sending *sync.Mutex, wg *sync.WaitGroup, timeout time.Duration) {
 	defer wg.Done()
-	called := make(chan struct{})
-	sent := make(chan struct{})
+	called := make(chan struct{}, 1)
+	sent := make(chan struct{}, 1)
 	go func() {
 		err := req.svc.call(req.mtype, req.argv, req.replyv) // call: svc.mtype(argv, replyv)
 		called <- struct{}{}
@@ -253,6 +257,7 @@ func (server *Server) handleRequest(cc codec.Codec, req *request,
 		req.h.Error = fmt.Sprintf("rpc server: request handle timeout: expect within %s", timeout)
 		server.sendResponse(cc, req.h, invalidRequest, sending)
 		// TODO: 这里直接退出，那上面协程会不会被阻塞？(goroutine 泄漏)
+		// 修改：called、sent 都采用了缓冲区，会有问题吗？
 	case <-called:
 		<-sent
 	}

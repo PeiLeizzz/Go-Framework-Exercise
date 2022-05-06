@@ -74,7 +74,7 @@ func call2(addrCh chan string) {
 	wg.Wait()
 }
 
-func main() {
+func main5() {
 	log.SetFlags(0)
 	ch := make(chan string)
 	go call(ch)

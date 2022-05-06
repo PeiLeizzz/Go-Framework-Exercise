@@ -171,6 +171,13 @@ func NewClient(conn net.Conn, opt *Option) (*Client, error) {
 		_ = conn.Close()
 		return nil, err
 	}
+	// 接收 options 响应，防止 options 粘包
+	if err := json.NewDecoder(conn).Decode(&opt); err != nil {
+		log.Println("rpc client: read options response error:", err)
+		_ = conn.Close()
+		return nil, err
+	}
+	log.Println("rpc client: exchange options success, you can send some request now")
 	return newClientCodec(f(conn), opt), nil
 }
 
@@ -260,7 +267,7 @@ func dialTimeout(f newClientFunc, network, address string, opts ...*Option) (cli
 		}
 	}()
 
-	ch := make(chan clientResult)
+	ch := make(chan clientResult, 1)
 	go func() {
 		client, err := f(conn, opt)
 		ch <- clientResult{
@@ -277,6 +284,7 @@ func dialTimeout(f newClientFunc, network, address string, opts ...*Option) (cli
 	select {
 	case <-time.After(opt.ConnectTimeout):
 		// TODO: 超时退出后上面协程中的 ch 可能被阻塞，会导致泄漏
+		// 修改：加了缓冲区，是否会有问题？
 		return nil, fmt.Errorf("rpc client: connect timeout: expect within %s", opt.ConnectTimeout)
 	case result := <-ch:
 		return result.client, result.err
@@ -396,6 +404,7 @@ func (client *Client) Call(ctx context.Context, serviceMethod string, args, repl
 		client.removeCall(call.Seq)
 		// 若是该函数退出后 receive 又收到了响应，call.done() 岂不是会阻塞导致 receive 被阻塞？
 		// 其实不会，因为 call.Done 有至少 一个单位 的缓冲区，call.done() 可以正常执行
+		// 那下一次的 Call 岂不是会秒返回？不会，Call() 函数中每个 call 对应的缓冲区都是新建的，不存在复用
 		return errors.New("rpc client: call failed: " + ctx.Err().Error())
 	case call := <-call.Done:
 		return call.Error
