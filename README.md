@@ -3,6 +3,7 @@
 项目地址：
 - [Gee](https://geektutu.com/post/gee.html)
 - [GeeORM](https://geektutu.com/post/geeorm.html)
+- [GeeRPC](https://geektutu.com/post/geerpc.html)
 
 ## Gee 重要的构件
 
@@ -47,3 +48,10 @@ GeeORM 仅 800 左右的代码是不可能做到这一点的。不过，GeeORM �
   - 服务发现（service discovery）
   - 负载均衡（load balance）
   - 超时处理（timeout processing）
+- 总结：
+  1. 实现了服务端以及支持并发的客户端
+  2. 支持选择不同的序列化协议（GOB、JSON）
+  3. 为了防止服务挂死，在一些关键地方添加了超时处理机制
+  4. 支持多种传输协议（TCP、Unix、HTTP）
+  5. 支持多种负载均衡模式
+  6. 实现了简易的服务注册中心和发现模块
