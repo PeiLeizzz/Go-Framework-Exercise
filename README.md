@@ -4,6 +4,7 @@
 - [Gee](https://geektutu.com/post/gee.html)
 - [GeeORM](https://geektutu.com/post/geeorm.html)
 - [GeeRPC](https://geektutu.com/post/geerpc.html)
+- [GeeCache](https://geektutu.com/post/geecache.html)
 
 ## Gee 重要的构件
 
@@ -55,3 +56,12 @@ GeeORM 仅 800 左右的代码是不可能做到这一点的。不过，GeeORM �
   4. 支持多种传输协议（TCP、Unix、HTTP）
   5. 支持多种负载均衡模式
   6. 实现了简易的服务注册中心和发现模块
+
+## GeeCache
+- 设计一个分布式缓存系统，需要考虑资源控制、淘汰策略、并发、分布式节点通信等问题
+- GeeCache 实现的特性有：
+  - 单机缓存和基于 HTTP 的分布式缓存
+  - 最近最少访问（Least Recently Used，LRU）缓存策略
+  - 使用 Go 锁机制防止缓存击穿
+  - 使用一致性哈希选择节点，实现复杂均衡
+  - 使用 protobuf 优化节点间二进制通信
