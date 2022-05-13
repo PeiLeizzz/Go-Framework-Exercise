@@ -2,7 +2,6 @@ package lru
 
 import "container/list"
 
-// 目前实现的版本并发不安全
 type Cache struct {
 	maxBytes  int64 // 允许使用的最大内存，设为 0 时表示无限制
 	nbytes    int64 // 已使用的内存
