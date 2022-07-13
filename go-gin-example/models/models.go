@@ -22,7 +22,7 @@ type Model struct {
 }
 
 func Setup() {
-	dbURL := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset-utf8mb4&parseTime=True&loc=Local",
+	dbURL := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		setting.DatabaseSetting.User,
 		setting.DatabaseSetting.Password,
 		setting.DatabaseSetting.Host,

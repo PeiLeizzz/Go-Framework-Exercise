@@ -1,0 +1,20 @@
+sensitive:
+  - 傻逼
+  - 二逼
+  - 草泥马
+  - 操你妈
+  - 操你吗
+  - 操尼玛
+  - 草尼玛
+  - 傻b
+  - 傻B
+  - 傻比
+  - 傻狗
+  - 贱逼
+  - 屌
+
+offline-num: 100
+
+token-secret: 1zrvOpl5u14Y
+
+message-queue: 1024
